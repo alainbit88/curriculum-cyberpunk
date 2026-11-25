@@ -1,0 +1,808 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="data:," />
+    <title>Centro de Control Cyberpunk – Alain Quintero</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet" />
+    <style>
+      button, [role="button"], select, summary, input:not([type="checkbox"], [type="radio"]) { min-height: 2.25rem; }
+
+      :root {
+        --bg: #04070d;
+        --bg-grid: rgba(0, 240, 255, 0.05);
+        --panel: #0a111e;
+        --panel-2: #0d1626;
+        --line: #1b3a4d;
+        --line-bright: #00f0ff;
+        --ink: #d7f3ff;
+        --ink-dim: #7fa6b8;
+        --cyan: #00f0ff;
+        --magenta: #ff2a6d;
+        --amber: #ffb300;
+        --green: #2bff88;
+        --glow: 0 0 14px rgba(0, 240, 255, 0.35);
+        --chip: #0e2233;
+        --term-bg: #02060b;
+        color-scheme: dark;
+      }
+      @media (prefers-color-scheme: light) {
+        :root {
+          --bg: #d9e4ec;
+          --bg-grid: rgba(0, 90, 120, 0.08);
+          --panel: #f2f7fa;
+          --panel-2: #e6eff5;
+          --line: #9db8c6;
+          --line-bright: #007d99;
+          --ink: #0b2432;
+          --ink-dim: #3d5c6d;
+          --cyan: #007d99;
+          --magenta: #c2185b;
+          --amber: #9a6200;
+          --green: #0a7a3d;
+          --glow: 0 0 10px rgba(0, 125, 153, 0.25);
+          --chip: #dcebf2;
+          --term-bg: #0b1622;
+          color-scheme: light;
+        }
+      }
+
+      * { box-sizing: border-box; }
+      html { scroll-behavior: smooth; }
+      body {
+        margin: 0;
+        background:
+          linear-gradient(var(--bg-grid) 1px, transparent 1px),
+          linear-gradient(90deg, var(--bg-grid) 1px, transparent 1px),
+          var(--bg);
+        background-size: 34px 34px, 34px 34px, auto;
+        color: var(--ink);
+        font-family: "Share Tech Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 16px;
+        line-height: 1.55;
+      }
+      ::selection { background: var(--magenta); color: #fff; }
+
+      h1, h2, h3, .display {
+        font-family: "Orbitron", "Share Tech Mono", monospace;
+        letter-spacing: 0.04em;
+        margin: 0;
+      }
+      a { color: var(--cyan); }
+      button { font-family: inherit; cursor: pointer; }
+
+      .wrap { max-width: 1180px; margin: 0 auto; padding: 0 16px 64px; }
+
+      /* ---------- Barra de estado ---------- */
+      .statusbar {
+        position: sticky; top: 0; z-index: 50;
+        background: var(--panel);
+        border-bottom: 2px solid var(--line-bright);
+        box-shadow: var(--glow);
+      }
+      .statusbar-in {
+        max-width: 1180px; margin: 0 auto; padding: 8px 16px;
+        display: flex; flex-wrap: wrap; gap: 8px 22px; align-items: center;
+        font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.08em;
+      }
+      .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: var(--green); box-shadow: 0 0 8px var(--green); margin-right: 7px; animation: blink 1.6s steps(2, start) infinite; }
+      .dot.mag { background: var(--magenta); box-shadow: 0 0 8px var(--magenta); }
+      @keyframes blink { 50% { opacity: 0.25; } }
+      .statusbar .grow { flex: 1 1 auto; }
+      .clock { color: var(--cyan); font-weight: bold; }
+
+      /* ---------- Paneles ---------- */
+      .panel {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-top: 3px solid var(--line-bright);
+        padding: 20px;
+        margin-top: 22px;
+        position: relative;
+      }
+      .panel.mag { border-top-color: var(--magenta); }
+      .panel.amb { border-top-color: var(--amber); }
+      .panel.grn { border-top-color: var(--green); }
+      .panel-tag {
+        position: absolute; top: -11px; left: 14px;
+        background: var(--bg); color: var(--cyan);
+        font-size: 0.7rem; letter-spacing: 0.18em; text-transform: uppercase;
+        padding: 2px 8px; border: 1px solid var(--line);
+      }
+      .panel.mag .panel-tag { color: var(--magenta); }
+      .panel.amb .panel-tag { color: var(--amber); }
+      .panel.grn .panel-tag { color: var(--green); }
+      .panel h2 { font-size: 1.15rem; text-transform: uppercase; margin-bottom: 12px; }
+
+      /* ---------- Hero / operador ---------- */
+      .hero { margin-top: 26px; padding: 26px 22px; }
+      .hero-grid { display: grid; grid-template-columns: 1fr; gap: 22px; }
+      @media (min-width: 860px) { .hero-grid { grid-template-columns: 1.6fr 1fr; } }
+      .op-label { color: var(--magenta); font-size: 0.8rem; letter-spacing: 0.22em; text-transform: uppercase; }
+      .hero h1 { font-size: clamp(1.7rem, 5.2vw, 3rem); font-weight: 900; line-height: 1.12; margin: 8px 0 6px; text-transform: uppercase; }
+      .hero h1 .neon { color: var(--cyan); text-shadow: var(--glow); }
+      .hero .role { font-family: "Orbitron", monospace; font-size: clamp(0.95rem, 2.6vw, 1.2rem); color: var(--amber); text-transform: uppercase; letter-spacing: 0.1em; }
+      .hero p.summary { color: var(--ink); max-width: 62ch; margin: 14px 0 0; }
+      .hero p.summary b { color: var(--cyan); }
+
+      .id-card { background: var(--panel-2); border: 1px dashed var(--line-bright); padding: 16px; font-size: 0.92rem; }
+      .id-card h3 { font-size: 0.8rem; letter-spacing: 0.2em; color: var(--ink-dim); text-transform: uppercase; margin-bottom: 10px; }
+      .id-card dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; }
+      .id-card dt { color: var(--ink-dim); text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.1em; padding-top: 2px; }
+      .id-card dd { margin: 0; word-break: break-word; }
+      .id-card a { text-decoration: none; }
+      .id-card a:hover { text-decoration: underline; }
+
+      .actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 20px; }
+      .btn {
+        display: inline-flex; align-items: center; gap: 9px;
+        background: var(--cyan); color: #02141a; border: 2px solid var(--cyan);
+        font-family: "Orbitron", monospace; font-weight: 700; font-size: 0.85rem;
+        letter-spacing: 0.08em; text-transform: uppercase; text-decoration: none;
+        padding: 10px 18px; min-height: 44px;
+        clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+      }
+      .btn:hover { box-shadow: var(--glow); }
+      .btn.ghost { background: transparent; color: var(--cyan); }
+      .btn.mag { background: var(--magenta); border-color: var(--magenta); color: #fff; }
+      .btn svg { flex: 0 0 auto; }
+
+      /* ---------- Métricas ---------- */
+      .stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+      @media (min-width: 860px) { .stats { grid-template-columns: repeat(4, 1fr); } }
+      .stat { background: var(--panel-2); border: 1px solid var(--line); padding: 14px; text-align: left; }
+      .stat .num { font-family: "Orbitron", monospace; font-size: 2rem; font-weight: 900; color: var(--cyan); line-height: 1; }
+      .stat.mag .num { color: var(--magenta); }
+      .stat.amb .num { color: var(--amber); }
+      .stat.grn .num { color: var(--green); }
+      .stat .lbl { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--ink-dim); margin-top: 7px; }
+
+      .gauges { display: grid; grid-template-columns: 1fr; gap: 16px; margin-top: 18px; }
+      @media (min-width: 860px) { .gauges { grid-template-columns: repeat(3, 1fr); } }
+      .gauge { background: var(--panel-2); border: 1px solid var(--line); padding: 14px; }
+      .gauge-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+      .gauge-head .gname { font-family: "Orbitron", monospace; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.08em; }
+      .gauge-head .gval { font-size: 1.3rem; color: var(--cyan); font-weight: bold; }
+      .gauge.mag .gval { color: var(--magenta); }
+      .gauge.amb .gval { color: var(--amber); }
+      .bar { height: 12px; background: var(--bg); border: 1px solid var(--line); margin: 10px 0; overflow: hidden; }
+      .bar > i { display: block; height: 100%; width: 50%; background: repeating-linear-gradient(90deg, var(--cyan) 0 8px, transparent 8px 11px); transition: width 0.9s ease; }
+      .gauge.mag .bar > i { background: repeating-linear-gradient(90deg, var(--magenta) 0 8px, transparent 8px 11px); }
+      .gauge.amb .bar > i { background: repeating-linear-gradient(90deg, var(--amber) 0 8px, transparent 8px 11px); }
+      .gauge canvas { width: 100%; height: 44px; display: block; }
+      .gauge .gnote { font-size: 0.78rem; color: var(--ink-dim); margin-top: 8px; }
+
+      /* ---------- Columnas ---------- */
+      .cols { display: grid; grid-template-columns: 1fr; gap: 0; }
+      @media (min-width: 980px) { .cols { grid-template-columns: 1fr 1fr; gap: 22px; } .cols .panel { margin-top: 22px; } }
+
+      /* ---------- Alertas resueltas ---------- */
+      .alert { border: 1px solid var(--line); border-left: 5px solid var(--green); background: var(--panel-2); padding: 12px 14px; margin-bottom: 12px; }
+      .alert-head { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; }
+      .alert-id { color: var(--ink-dim); font-size: 0.78rem; letter-spacing: 0.08em; }
+      .alert-title { font-family: "Orbitron", monospace; font-size: 0.92rem; text-transform: uppercase; }
+      .badge {
+        margin-left: auto; font-size: 0.7rem; letter-spacing: 0.14em; text-transform: uppercase;
+        color: #02140a; background: var(--green); padding: 3px 9px; font-weight: bold;
+      }
+      .alert p { margin: 7px 0 0; font-size: 0.9rem; color: var(--ink); }
+      .alert .meta { font-size: 0.78rem; color: var(--ink-dim); margin-top: 5px; text-transform: uppercase; letter-spacing: 0.06em; }
+
+      /* ---------- Registro de operaciones ---------- */
+      .log { list-style: none; margin: 0; padding: 0; }
+      .log li { border-left: 2px solid var(--line); padding: 0 0 18px 18px; position: relative; }
+      .log li:last-child { padding-bottom: 2px; }
+      .log li::before { content: ""; position: absolute; left: -7px; top: 4px; width: 12px; height: 12px; background: var(--bg); border: 2px solid var(--cyan); transform: rotate(45deg); }
+      .log li.now::before { border-color: var(--magenta); background: var(--magenta); box-shadow: 0 0 10px var(--magenta); }
+      .log .when { color: var(--amber); font-size: 0.8rem; letter-spacing: 0.08em; }
+      .log .what { font-family: "Orbitron", monospace; font-size: 0.95rem; text-transform: uppercase; margin: 2px 0; }
+      .log .where { color: var(--ink-dim); font-size: 0.88rem; }
+      .log .live-tag { color: var(--magenta); font-size: 0.72rem; letter-spacing: 0.16em; text-transform: uppercase; margin-left: 8px; }
+
+      /* ---------- Explorador de stack ---------- */
+      .filters { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+      .fbtn {
+        background: var(--chip); color: var(--ink); border: 1px solid var(--line);
+        padding: 8px 14px; font-size: 0.82rem; letter-spacing: 0.06em; text-transform: uppercase;
+        min-height: 38px;
+      }
+      .fbtn[aria-pressed="true"] { background: var(--cyan); color: #02141a; border-color: var(--cyan); font-weight: bold; }
+      .tech-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+      @media (min-width: 560px) { .tech-grid { grid-template-columns: repeat(3, 1fr); } }
+      .tech {
+        background: var(--panel-2); border: 1px solid var(--line); color: var(--ink);
+        padding: 13px 12px; text-align: left; font-size: 0.92rem; min-height: 52px;
+        display: flex; flex-direction: column; gap: 3px;
+      }
+      .tech:hover { border-color: var(--line-bright); }
+      .tech[aria-pressed="true"] { border-color: var(--magenta); box-shadow: 0 0 0 1px var(--magenta); }
+      .tech .tcat { font-size: 0.68rem; color: var(--ink-dim); text-transform: uppercase; letter-spacing: 0.12em; }
+      .tech .tname { font-family: "Orbitron", monospace; font-size: 0.88rem; }
+      .readout {
+        margin-top: 16px; background: var(--term-bg); border: 1px solid var(--line-bright);
+        color: #aef7c9; padding: 14px 16px; font-size: 0.9rem; min-height: 96px;
+      }
+      @media (prefers-color-scheme: light) { .readout { color: #aef7c9; } }
+      .readout .r-name { color: var(--cyan); font-family: "Orbitron", monospace; text-transform: uppercase; }
+      .readout .r-cat { color: var(--amber); font-size: 0.75rem; letter-spacing: 0.14em; text-transform: uppercase; }
+      .readout p { margin: 6px 0 0; }
+
+      /* ---------- Terminal ---------- */
+      .terminal { background: var(--term-bg); border: 1px solid var(--line); }
+      .term-head { display: flex; align-items: center; gap: 8px; padding: 9px 12px; border-bottom: 1px solid var(--line); color: var(--ink-dim); font-size: 0.78rem; letter-spacing: 0.1em; text-transform: uppercase; }
+      .term-head .tdots { display: flex; gap: 6px; }
+      .term-head .tdots i { width: 11px; height: 11px; border-radius: 50%; display: block; }
+      .tdots i:nth-child(1) { background: var(--magenta); }
+      .tdots i:nth-child(2) { background: var(--amber); }
+      .tdots i:nth-child(3) { background: var(--green); }
+      .term-body { padding: 14px 16px; height: 260px; overflow-y: auto; font-size: 0.88rem; color: #aef7c9; }
+      .term-body .cmd { color: var(--cyan); }
+      .term-body .sys { color: #7fa6b8; }
+      .term-body div { white-space: pre-wrap; word-break: break-word; }
+      .term-cmds { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px; border-top: 1px solid var(--line); }
+      .cbtn { background: transparent; border: 1px solid var(--cyan); color: var(--cyan); padding: 8px 13px; font-size: 0.84rem; min-height: 38px; }
+      .cbtn:hover { background: var(--cyan); color: #02141a; }
+      .term-form { display: flex; gap: 8px; padding: 0 12px 12px; }
+      .term-form span { color: var(--green); align-self: center; }
+      .term-form input {
+        flex: 1 1 auto; min-width: 0; background: var(--bg); border: 1px solid var(--line);
+        color: var(--ink); padding: 9px 11px; font-family: inherit; font-size: 0.9rem; min-height: 40px;
+      }
+
+      /* ---------- Habilidades y educación ---------- */
+      .skills { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr; gap: 8px; }
+      @media (min-width: 560px) { .skills { grid-template-columns: 1fr 1fr; } }
+      .skills li { background: var(--panel-2); border: 1px solid var(--line); padding: 9px 12px; font-size: 0.9rem; display: flex; align-items: center; gap: 10px; }
+      .skills li::before { content: "▸"; color: var(--magenta); font-size: 1.05rem; }
+      .skills li .ok { margin-left: auto; color: var(--green); font-size: 0.7rem; letter-spacing: 0.14em; }
+      .edu p { margin: 6px 0; }
+      .edu .deg { font-family: "Orbitron", monospace; font-size: 1rem; text-transform: uppercase; }
+      .edu .dim { color: var(--ink-dim); font-size: 0.9rem; }
+
+      /* ---------- Contacto ---------- */
+      .contact-grid { display: grid; grid-template-columns: 1fr; gap: 14px; }
+      @media (min-width: 700px) { .contact-grid { grid-template-columns: repeat(3, 1fr); } }
+      .contact-item { background: var(--panel-2); border: 1px solid var(--line); padding: 16px; }
+      .contact-item .cl { font-size: 0.72rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-dim); }
+      .contact-item .cv2 { font-size: 1.02rem; margin-top: 6px; word-break: break-word; }
+      .contact-item a { text-decoration: none; }
+      .contact-item a:hover { text-decoration: underline; }
+      .copy-btn { margin-top: 10px; background: transparent; border: 1px solid var(--cyan); color: var(--cyan); padding: 7px 12px; font-size: 0.8rem; min-height: 38px; }
+      .copy-btn:hover { background: var(--cyan); color: #02141a; }
+
+      footer { margin-top: 34px; text-align: center; color: var(--ink-dim); font-size: 0.8rem; letter-spacing: 0.1em; text-transform: uppercase; }
+      footer .blink { color: var(--green); animation: blink 1.6s steps(2, start) infinite; }
+
+      .scan { position: relative; }
+      .scan::after {
+        content: ""; position: absolute; inset: 0; pointer-events: none;
+        background: repeating-linear-gradient(0deg, rgba(255,255,255,0.025) 0 1px, transparent 1px 3px);
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .dot, footer .blink { animation: none; }
+        html { scroll-behavior: auto; }
+        .bar > i { transition: none; }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Barra de estado del sistema -->
+    <div class="statusbar" role="status" aria-label="Estado del sistema">
+      <div class="statusbar-in">
+        <span><span class="dot" aria-hidden="true"></span>Sistema operativo</span>
+        <span><span class="dot mag" aria-hidden="true"></span>Nodo: La Habana, CU</span>
+        <span class="grow"></span>
+        <span>Hora local <span class="clock" id="clock">--:--:--</span></span>
+        <span>Señal ▂▄▆█</span>
+      </div>
+    </div>
+
+    <div class="wrap">
+      <!-- Operador -->
+      <section class="panel hero scan" aria-labelledby="op-name">
+        <span class="panel-tag">Identificación del operador</span>
+        <div class="hero-grid">
+          <div>
+            <div class="op-label">// Operador en línea — acceso concedido</div>
+            <h1 id="op-name">Alain <span class="neon">Quintero</span> García</h1>
+            <div class="role">Administrador de Redes · SWIFT · CIO/CTO</div>
+            <p class="summary">
+              Administrador de Redes con más de <b>5 años</b> de experiencia en soporte de entornos de
+              servidores, más de <b>5 años</b> como administrador de <b>SWIFT</b> y más de <b>3 años</b>
+              combinados como <b>CIO/CTO</b> en dos empresas. Experto en infraestructura de red, nube
+              y alta disponibilidad.
+            </p>
+            <div class="actions">
+              <button class="btn" id="download-cv" type="button">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M12 3v12m0 0l-4.5-4.5M12 15l4.5-4.5M4 20h16"/></svg>
+                Descargar CV
+              </button>
+              <a class="btn ghost" href="mailto:alainqg28@gmail.com">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>
+                Enviar transmisión
+              </a>
+              <a class="btn mag" href="#stack">
+                Explorar el stack
+              </a>
+            </div>
+          </div>
+          <aside class="id-card" aria-label="Ficha del operador">
+            <h3>Ficha // OP-2011-AQG</h3>
+            <dl>
+              <dt>Nombre</dt><dd>Alain Quintero García</dd>
+              <dt>Base</dt><dd>La Habana, Cuba</dd>
+              <dt>Correo</dt><dd><a href="mailto:alainqg28@gmail.com">alainqg28@gmail.com</a></dd>
+              <dt>Teléfono</dt><dd><a href="tel:+5352010863">+53 5 201 0863</a></dd>
+              <dt>En servicio</dt><dd>Desde 2011</dd>
+              <dt>Estado</dt><dd>Activo — Banco Exterior de Cuba</dd>
+            </dl>
+          </aside>
+        </div>
+      </section>
+
+      <!-- Métricas en vivo -->
+      <section class="panel" aria-labelledby="metrics-h">
+        <span class="panel-tag">Telemetría en vivo</span>
+        <h2 id="metrics-h">Métricas del sistema</h2>
+        <div class="stats">
+          <div class="stat"><div class="num" data-count="15">0</div><div class="lbl">Años de trayectoria (desde 2011)</div></div>
+          <div class="stat mag"><div class="num" data-count="5" data-suffix="+">0</div><div class="lbl">Años administrando SWIFT</div></div>
+          <div class="stat amb"><div class="num" data-count="5" data-suffix="+">0</div><div class="lbl">Años en entornos de servidores</div></div>
+          <div class="stat grn"><div class="num" data-count="3" data-suffix="+">0</div><div class="lbl">Años como CIO / CTO</div></div>
+        </div>
+        <div class="gauges">
+          <div class="gauge">
+            <div class="gauge-head"><span class="gname">Red / Infraestructura</span><span class="gval" id="gv-net">--%</span></div>
+            <div class="bar"><i id="gb-net"></i></div>
+            <canvas id="spark-net" width="300" height="44" aria-hidden="true"></canvas>
+            <div class="gnote">pfSense · Squid · CheckMK vigilando el perímetro.</div>
+          </div>
+          <div class="gauge mag">
+            <div class="gauge-head"><span class="gname">Servidores / Virtualización</span><span class="gval" id="gv-srv">--%</span></div>
+            <div class="bar"><i id="gb-srv"></i></div>
+            <canvas id="spark-srv" width="300" height="44" aria-hidden="true"></canvas>
+            <div class="gnote">ESXi · Proxmox · Docker en alta disponibilidad.</div>
+          </div>
+          <div class="gauge amb">
+            <div class="gauge-head"><span class="gname">Canal SWIFT</span><span class="gval" id="gv-swift">--%</span></div>
+            <div class="bar"><i id="gb-swift"></i></div>
+            <canvas id="spark-swift" width="300" height="44" aria-hidden="true"></canvas>
+            <div class="gnote">Mensajería financiera internacional bajo control.</div>
+          </div>
+        </div>
+      </section>
+
+      <div class="cols">
+        <div>
+          <!-- Alertas resueltas -->
+          <section class="panel grn" aria-labelledby="alerts-h">
+            <span class="panel-tag">Historial de incidentes</span>
+            <h2 id="alerts-h">Alertas resueltas</h2>
+
+            <article class="alert">
+              <div class="alert-head"><span class="alert-id">ALRT-2020-07</span><span class="alert-title">Red bancaria bajo mando único</span><span class="badge">Resuelta</span></div>
+              <p>Asume la administración de red del Banco Exterior de Cuba, puesto que mantiene en la actualidad: infraestructura, seguridad y soporte de entornos de servidores.</p>
+              <div class="meta">Banco Exterior de Cuba · 07/2020 — presente</div>
+            </article>
+
+            <article class="alert">
+              <div class="alert-head"><span class="alert-id">ALRT-2017-05</span><span class="alert-title">Canal SWIFT estabilizado</span><span class="badge">Resuelta</span></div>
+              <p>Tres años continuos como administrador SWIFT en banca exterior, sumados a su etapa anterior en el mismo rol: más de 5 años custodiando la mensajería financiera.</p>
+              <div class="meta">Banco Exterior de Cuba · 05/2017 — 07/2020</div>
+            </article>
+
+            <article class="alert">
+              <div class="alert-head"><span class="alert-id">ALRT-2015-01</span><span class="alert-title">Mando ejecutivo activado</span><span class="badge">Resuelta</span></div>
+              <p>Promovido a CIO/CTO del Banco Exterior de Cuba: dirección tecnológica, relaciones con proveedores y gestión integral de sistemas.</p>
+              <div class="meta">Banco Exterior de Cuba · 01/2015 — 05/2017</div>
+            </article>
+
+            <article class="alert">
+              <div class="alert-head"><span class="alert-id">ALRT-2013-07</span><span class="alert-title">Primer contacto con SWIFT</span><span class="badge">Resuelta</span></div>
+              <p>Entra al sector bancario como especialista en hardware y administrador SWIFT, combinando soporte físico de equipos con la red de mensajería financiera.</p>
+              <div class="meta">Banco Exterior de Cuba · 07/2013 — 01/2015</div>
+            </article>
+
+            <article class="alert">
+              <div class="alert-head"><span class="alert-id">ALRT-2012-07</span><span class="alert-title">Salto a la dirección</span><span class="badge">Resuelta</span></div>
+              <p>Con apenas un año de operación, pasa de administrador de red a CIO/CTO de la Dirección Provincial de Justicia de La Habana.</p>
+              <div class="meta">Dirección Provincial de Justicia · 07/2012 — 06/2013</div>
+            </article>
+
+            <article class="alert">
+              <div class="alert-head"><span class="alert-id">ALRT-2011-04</span><span class="alert-title">Sistema en línea por primera vez</span><span class="badge">Resuelta</span></div>
+              <p>Primer despliegue profesional: administración de la red de la Dirección Provincial de Justicia de La Habana. Aquí arranca la señal.</p>
+              <div class="meta">Dirección Provincial de Justicia · 04/2011 — 06/2012</div>
+            </article>
+          </section>
+
+          <!-- Educación -->
+          <section class="panel amb edu" aria-labelledby="edu-h">
+            <span class="panel-tag">Módulo de formación</span>
+            <h2 id="edu-h">Educación</h2>
+            <p class="deg">Licenciado en Pedagogía — Especialidad en Informática</p>
+            <p>Universidad de Ciencias Pedagógicas Héctor Alfredo Pineda Zaldívar, La Habana · 07/2013</p>
+            <p class="dim">Tesis: «Sitio Web de la Dirección Provincial de Justicia» — la institución donde trabajó de 2011 a 2013 y de la que fue CIO/CTO entre 2012 y 2013.</p>
+          </section>
+        </div>
+
+        <div>
+          <!-- Registro de operaciones -->
+          <section class="panel mag" aria-labelledby="log-h">
+            <span class="panel-tag">Registro de operaciones</span>
+            <h2 id="log-h">Historial de servicio</h2>
+            <ol class="log">
+              <li class="now">
+                <div class="when">07/2020 — PRESENTE<span class="live-tag">● En curso</span></div>
+                <div class="what">Administrador de Red</div>
+                <div class="where">Banco Exterior de Cuba</div>
+              </li>
+              <li>
+                <div class="when">05/2017 — 07/2020</div>
+                <div class="what">Administrador de SWIFT</div>
+                <div class="where">Banco Exterior de Cuba</div>
+              </li>
+              <li>
+                <div class="when">01/2015 — 05/2017</div>
+                <div class="what">CIO / CTO</div>
+                <div class="where">Banco Exterior de Cuba</div>
+              </li>
+              <li>
+                <div class="when">07/2013 — 01/2015</div>
+                <div class="what">Especialista en Hardware y Administrador SWIFT</div>
+                <div class="where">Banco Exterior de Cuba</div>
+              </li>
+              <li>
+                <div class="when">07/2012 — 06/2013</div>
+                <div class="what">CIO / CTO</div>
+                <div class="where">Dirección Provincial de Justicia, La Habana</div>
+              </li>
+              <li>
+                <div class="when">04/2011 — 06/2012</div>
+                <div class="what">Administrador de Red</div>
+                <div class="where">Dirección Provincial de Justicia, La Habana</div>
+              </li>
+            </ol>
+          </section>
+
+          <!-- Habilidades -->
+          <section class="panel" aria-labelledby="skills-h">
+            <span class="panel-tag">Módulos instalados</span>
+            <h2 id="skills-h">Habilidades del operador</h2>
+            <ul class="skills">
+              <li>Seguridad de la red <span class="ok">ACTIVO</span></li>
+              <li>Gestión del sistema <span class="ok">ACTIVO</span></li>
+              <li>Instalación de hardware <span class="ok">ACTIVO</span></li>
+              <li>Instalación de software <span class="ok">ACTIVO</span></li>
+              <li>Copias de seguridad <span class="ok">ACTIVO</span></li>
+              <li>Resolución de problemas <span class="ok">ACTIVO</span></li>
+              <li>Soporte al usuario <span class="ok">ACTIVO</span></li>
+              <li>Relaciones con proveedores <span class="ok">ACTIVO</span></li>
+              <li>Colaboración en equipo <span class="ok">ACTIVO</span></li>
+              <li>Comunicación verbal y escrita <span class="ok">ACTIVO</span></li>
+            </ul>
+          </section>
+        </div>
+      </div>
+
+      <!-- Explorador de stack -->
+      <section class="panel" id="stack" aria-labelledby="stack-h">
+        <span class="panel-tag">Base de datos de tecnología</span>
+        <h2 id="stack-h">Explorador del stack tecnológico</h2>
+        <div class="filters" role="group" aria-label="Filtrar tecnologías por categoría">
+          <button class="fbtn" type="button" data-filter="all" aria-pressed="true">Todo el arsenal</button>
+          <button class="fbtn" type="button" data-filter="red" aria-pressed="false">Red y seguridad</button>
+          <button class="fbtn" type="button" data-filter="virt" aria-pressed="false">Virtualización</button>
+          <button class="fbtn" type="button" data-filter="db" aria-pressed="false">Bases de datos</button>
+          <button class="fbtn" type="button" data-filter="correo" aria-pressed="false">Correo y proxy</button>
+          <button class="fbtn" type="button" data-filter="auto" aria-pressed="false">Automatización e IA</button>
+        </div>
+        <div class="tech-grid" id="tech-grid"></div>
+        <div class="readout" id="readout" aria-live="polite">
+          <span class="r-cat">Sistema en espera</span>
+          <div class="r-name">&gt; Selecciona una tecnología</div>
+          <p>Toca cualquier módulo del arsenal para ver su ficha técnica en esta consola.</p>
+        </div>
+      </section>
+
+      <!-- Terminal -->
+      <section class="panel mag" aria-labelledby="term-h">
+        <span class="panel-tag">Acceso directo</span>
+        <h2 id="term-h">Terminal del operador</h2>
+        <div class="terminal">
+          <div class="term-head">
+            <span class="tdots" aria-hidden="true"><i></i><i></i><i></i></span>
+            <span>alain@nodo-habana: ~/centro-de-control</span>
+          </div>
+          <div class="term-body" id="term-body" aria-live="polite"></div>
+          <div class="term-cmds">
+            <button class="cbtn" type="button" data-cmd="whoami">whoami</button>
+            <button class="cbtn" type="button" data-cmd="experiencia">experiencia</button>
+            <button class="cbtn" type="button" data-cmd="swift">swift --estado</button>
+            <button class="cbtn" type="button" data-cmd="contacto">contacto</button>
+            <button class="cbtn" type="button" data-cmd="ayuda">ayuda</button>
+          </div>
+          <form class="term-form" id="term-form">
+            <span aria-hidden="true">&gt;_</span>
+            <input id="term-input" type="text" autocomplete="off" spellcheck="false"
+              placeholder="Escribe un comando: whoami, experiencia, swift, stack, contacto, ayuda…"
+              aria-label="Escribe un comando para la terminal" />
+            <button class="cbtn" type="submit">Ejecutar</button>
+          </form>
+        </div>
+      </section>
+
+      <!-- Contacto -->
+      <section class="panel grn" aria-labelledby="contact-h">
+        <span class="panel-tag">Canal abierto</span>
+        <h2 id="contact-h">Establecer conexión</h2>
+        <div class="contact-grid">
+          <div class="contact-item">
+            <div class="cl">Correo electrónico</div>
+            <div class="cv2"><a href="mailto:alainqg28@gmail.com">alainqg28@gmail.com</a></div>
+            <button class="copy-btn" type="button" id="copy-email">Copiar dirección</button>
+          </div>
+          <div class="contact-item">
+            <div class="cl">Teléfono / WhatsApp</div>
+            <div class="cv2"><a href="tel:+5352010863">+53 5 201 0863</a></div>
+          </div>
+          <div class="contact-item">
+            <div class="cl">Ubicación de la base</div>
+            <div class="cv2">La Habana, Cuba</div>
+            <div class="cv2" style="font-size:0.85rem; color: var(--ink-dim);">Disponible para operaciones remotas</div>
+          </div>
+        </div>
+      </section>
+
+      <footer>
+        <p><span class="blink">●</span> Fin de la transmisión — Alain Quintero García · Nodo La Habana · Todos los sistemas nominales</p>
+      </footer>
+    </div>
+
+    <script>
+      (function () {
+        "use strict";
+        var reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+        /* ---------- Reloj de La Habana ---------- */
+        var clockEl = document.getElementById("clock");
+        var fmt = new Intl.DateTimeFormat("es-CU", {
+          timeZone: "America/Havana", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false
+        });
+        function tickClock() { clockEl.textContent = fmt.format(new Date()); }
+        tickClock();
+        setInterval(tickClock, 1000);
+
+        /* ---------- Contadores animados ---------- */
+        var counters = document.querySelectorAll("[data-count]");
+        counters.forEach(function (el) {
+          var target = parseInt(el.getAttribute("data-count"), 10);
+          var suffix = el.getAttribute("data-suffix") || "";
+          if (reduced) { el.textContent = target + suffix; return; }
+          var start = null, dur = 1400;
+          function step(ts) {
+            if (!start) start = ts;
+            var p = Math.min((ts - start) / dur, 1);
+            el.textContent = Math.round(target * (1 - Math.pow(1 - p, 3))) + (p === 1 ? suffix : "");
+            if (p < 1) requestAnimationFrame(step);
+          }
+          requestAnimationFrame(step);
+        });
+
+        /* ---------- Métricas vivas + sparklines ---------- */
+        var systems = [
+          { key: "net",   base: 78, spread: 14, min: 55, max: 97, color: "#00f0ff", data: [] },
+          { key: "srv",   base: 71, spread: 16, min: 48, max: 95, color: "#ff2a6d", data: [] },
+          { key: "swift", base: 88, spread: 8,  min: 72, max: 99, color: "#ffb300", data: [] }
+        ];
+        function nextVal(s) {
+          var v = s.base + (Math.random() - 0.5) * 2 * s.spread;
+          return Math.max(s.min, Math.min(s.max, Math.round(v)));
+        }
+        function drawSpark(s) {
+          var cv = document.getElementById("spark-" + s.key);
+          if (!cv) return;
+          var ctx = cv.getContext("2d");
+          var W = cv.width, H = cv.height;
+          ctx.clearRect(0, 0, W, H);
+          ctx.beginPath();
+          s.data.forEach(function (v, i) {
+            var x = (i / (s.data.length - 1)) * W;
+            var y = H - ((v - 30) / 75) * H;
+            if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+          });
+          ctx.strokeStyle = s.color; ctx.lineWidth = 2; ctx.stroke();
+          ctx.lineTo(W, H); ctx.lineTo(0, H); ctx.closePath();
+          ctx.globalAlpha = 0.15; ctx.fillStyle = s.color; ctx.fill(); ctx.globalAlpha = 1;
+        }
+        function updateSystem(s) {
+          var v = nextVal(s);
+          s.data.push(v); if (s.data.length > 28) s.data.shift();
+          document.getElementById("gv-" + s.key).textContent = v + "%";
+          document.getElementById("gb-" + s.key).style.width = v + "%";
+          drawSpark(s);
+        }
+        systems.forEach(function (s) {
+          for (var i = 0; i < 28; i++) { s.data.push(nextVal(s)); }
+          updateSystem(s);
+        });
+        if (!reduced) { setInterval(function () { systems.forEach(updateSystem); }, 1800); }
+
+        /* ---------- Explorador del stack ---------- */
+        var TECHS = [
+          { name: "pfSense", cat: "red", catLabel: "Red y seguridad",
+            desc: "Firewall y router de código abierto. En su arsenal es la muralla del perímetro: reglas de acceso, VPN y segmentación de la red bancaria." },
+          { name: "CheckMK", cat: "red", catLabel: "Red y seguridad",
+            desc: "Plataforma de monitorización de infraestructura. Los ojos del centro de control: vigila servidores, servicios y red, y avisa antes de que un fallo se convierta en incidente." },
+          { name: "OceanStore", cat: "red", catLabel: "Red y seguridad",
+            desc: "Sistema de almacenamiento en red. Guarda y protege los datos de la operación para que la información crítica esté siempre disponible." },
+          { name: "Docker", cat: "virt", catLabel: "Virtualización",
+            desc: "Contenedores para empaquetar y desplegar servicios de forma aislada y reproducible: lo que funciona en un nodo, funciona en todos." },
+          { name: "ESXi", cat: "virt", catLabel: "Virtualización",
+            desc: "Hipervisor de VMware para consolidar servidores físicos en máquinas virtuales: menos hierro, más control y alta disponibilidad." },
+          { name: "Proxmox", cat: "virt", catLabel: "Virtualización",
+            desc: "Plataforma de virtualización de código abierto (KVM y contenedores LXC). La alternativa abierta para gestionar clústeres de servidores." },
+          { name: "Microsoft SQL Server", cat: "db", catLabel: "Bases de datos",
+            desc: "Motor de bases de datos relacional de Microsoft, habitual en entornos empresariales y bancarios para datos transaccionales." },
+          { name: "MySQL", cat: "db", catLabel: "Bases de datos",
+            desc: "Base de datos relacional de código abierto, base de incontables aplicaciones web y servicios internos." },
+          { name: "PostgreSQL", cat: "db", catLabel: "Bases de datos",
+            desc: "El motor relacional abierto más avanzado: consultas complejas, integridad de datos y fiabilidad de nivel empresarial." },
+          { name: "MongoDB", cat: "db", catLabel: "Bases de datos",
+            desc: "Base de datos NoSQL orientada a documentos, para datos flexibles y aplicaciones que cambian rápido." },
+          { name: "Mail Gateway", cat: "correo", catLabel: "Correo y proxy",
+            desc: "Puerta de enlace de correo: filtra spam y amenazas antes de que lleguen a los buzones de la organización." },
+          { name: "Postfix", cat: "correo", catLabel: "Correo y proxy",
+            desc: "Servidor de correo (MTA) de código abierto, rápido y seguro: el cartero que mueve el correo entre servidores." },
+          { name: "Squid", cat: "correo", catLabel: "Correo y proxy",
+            desc: "Proxy caché web: acelera la navegación, ahorra ancho de banda y controla qué tráfico sale de la red." },
+          { name: "Agentes de IA con n8n", cat: "auto", catLabel: "Automatización e IA",
+            desc: "Automatización de flujos con n8n y agentes de inteligencia artificial: tareas repetitivas que se ejecutan solas mientras el operador se concentra en lo crítico." }
+        ];
+        var grid = document.getElementById("tech-grid");
+        var readout = document.getElementById("readout");
+        var techBtns = [];
+        TECHS.forEach(function (t) {
+          var b = document.createElement("button");
+          b.type = "button"; b.className = "tech"; b.setAttribute("aria-pressed", "false");
+          b.dataset.cat = t.cat;
+          b.innerHTML = '<span class="tcat"></span><span class="tname"></span>';
+          b.querySelector(".tcat").textContent = t.catLabel;
+          b.querySelector(".tname").textContent = t.name;
+          b.addEventListener("click", function () {
+            techBtns.forEach(function (x) { x.setAttribute("aria-pressed", "false"); });
+            b.setAttribute("aria-pressed", "true");
+            readout.innerHTML = '<span class="r-cat"></span><div class="r-name"></div><p></p>';
+            readout.querySelector(".r-cat").textContent = "Módulo // " + t.catLabel;
+            readout.querySelector(".r-name").textContent = "> " + t.name;
+            readout.querySelector("p").textContent = t.desc;
+          });
+          grid.appendChild(b); techBtns.push(b);
+        });
+        document.querySelectorAll(".fbtn").forEach(function (f) {
+          f.addEventListener("click", function () {
+            document.querySelectorAll(".fbtn").forEach(function (x) { x.setAttribute("aria-pressed", "false"); });
+            f.setAttribute("aria-pressed", "true");
+            var cat = f.getAttribute("data-filter");
+            techBtns.forEach(function (b) {
+              b.style.display = (cat === "all" || b.dataset.cat === cat) ? "" : "none";
+            });
+          });
+        });
+
+        /* ---------- Terminal ---------- */
+        var termBody = document.getElementById("term-body");
+        function printLine(text, cls) {
+          var d = document.createElement("div");
+          if (cls) d.className = cls;
+          d.textContent = text;
+          termBody.appendChild(d);
+          termBody.scrollTop = termBody.scrollHeight;
+        }
+        var COMMANDS = {
+          ayuda: "Comandos disponibles: whoami · experiencia · swift · stack · contacto · limpiar",
+          whoami: "Alain Quintero García — Administrador de Redes en el Banco Exterior de Cuba. +5 años en SWIFT, +5 en servidores, +3 como CIO/CTO. Base: La Habana.",
+          experiencia: "2011→ Red (Justicia) · 2012→ CIO/CTO (Justicia) · 2013→ Hardware + SWIFT (Banco Exterior) · 2015→ CIO/CTO (Banco Exterior) · 2017→ Admin SWIFT · 2020→ Admin de Red [ACTUAL]",
+          swift: "SWIFT: OPERATIVO ✓ — 5+ años administrando la mensajería financiera internacional del Banco Exterior de Cuba.",
+          stack: "Arsenal cargado: pfSense · Docker · CheckMK · OceanStore · SQL Server · MySQL · PostgreSQL · MongoDB · ESXi · Proxmox · Mail Gateway · Squid · Postfix · n8n + IA. Detalle arriba, en el explorador.",
+          contacto: "Correo: alainqg28@gmail.com · Teléfono: +53 5 201 0863 · Base: La Habana, Cuba. Canal abierto."
+        };
+        function runCmd(raw) {
+          var cmd = raw.trim().toLowerCase();
+          if (!cmd) return;
+          printLine("> " + raw, "cmd");
+          if (cmd === "limpiar" || cmd === "clear") { termBody.innerHTML = ""; printLine("Consola limpia. Sistema listo.", "sys"); return; }
+          if (cmd === "swift --estado") cmd = "swift";
+          if (COMMANDS[cmd]) { printLine(COMMANDS[cmd]); }
+          else { printLine("Comando no reconocido: «" + raw + "». Escribe «ayuda» para ver los comandos disponibles.", "sys"); }
+        }
+        document.querySelectorAll(".cbtn[data-cmd]").forEach(function (b) {
+          b.addEventListener("click", function () { runCmd(b.getAttribute("data-cmd")); });
+        });
+        document.getElementById("term-form").addEventListener("submit", function (e) {
+          e.preventDefault();
+          var input = document.getElementById("term-input");
+          runCmd(input.value); input.value = ""; input.focus();
+        });
+        var boot = [
+          ["sys", "[BOOT] Centro de Control v2.6 — nodo La Habana en línea…"],
+          ["sys", "[OK] Red ............ pfSense respondiendo"],
+          ["sys", "[OK] SWIFT .......... canal verificado"],
+          ["sys", "[OK] Servidores ..... ESXi / Proxmox / Docker nominales"],
+          ["", "Bienvenido, visitante. Escribe «ayuda» o pulsa un comando para interrogar al sistema."]
+        ];
+        if (reduced) {
+          boot.forEach(function (l) { printLine(l[1], l[0]); });
+        } else {
+          var bi = 0;
+          var bootTimer = setInterval(function () {
+            if (bi >= boot.length) { clearInterval(bootTimer); return; }
+            printLine(boot[bi][1], boot[bi][0]); bi++;
+          }, 420);
+        }
+
+        /* ---------- Copiar correo ---------- */
+        var copyBtn = document.getElementById("copy-email");
+        copyBtn.addEventListener("click", function () {
+          var email = "alainqg28@gmail.com";
+          function done() {
+            copyBtn.textContent = "¡Copiado! ✓";
+            setTimeout(function () { copyBtn.textContent = "Copiar dirección"; }, 2200);
+          }
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(email).then(done, function () { fallback(); });
+          } else { fallback(); }
+          function fallback() {
+            var ta = document.createElement("textarea");
+            ta.value = email; document.body.appendChild(ta); ta.select();
+            try { document.execCommand("copy"); done(); } catch (e) { copyBtn.textContent = email; }
+            document.body.removeChild(ta);
+          }
+        });
+
+        /* ---------- Descargar CV (documento generado al momento) ---------- */
+        document.getElementById("download-cv").addEventListener("click", function () {
+          var cv = [
+            "<!doctype html><html lang='es'><head><meta charset='utf-8'>",
+            "<title>CV — Alain Quintero García</title>",
+            "<style>body{font-family:Georgia,serif;max-width:760px;margin:40px auto;padding:0 20px;color:#1a1a1a;line-height:1.55}",
+            "h1{margin-bottom:2px}h2{border-bottom:2px solid #0a6ebd;padding-bottom:4px;margin-top:28px;color:#0a3d62}",
+            ".sub{color:#555}.job{margin-bottom:14px}.job b{font-size:1.02em}.when{color:#0a6ebd;font-weight:bold}",
+            "ul{margin:6px 0}</style></head><body>",
+            "<h1>Alain Quintero García</h1>",
+            "<div class='sub'>Administrador de Redes · Administrador SWIFT · CIO/CTO<br>",
+            "La Habana, Cuba · alainqg28@gmail.com · +53 5 201 0863</div>",
+            "<h2>Resumen profesional</h2>",
+            "<p>Administrador de Redes con más de 5 años de experiencia en soporte de entornos de servidores, más de 5 años como administrador de SWIFT y más de 3 años combinados como CIO/CTO en dos empresas. Experto en infraestructura de red, nube y alta disponibilidad.</p>",
+            "<h2>Experiencia</h2>",
+            "<div class='job'><span class='when'>07/2020 — presente</span><br><b>Administrador de Red</b> — Banco Exterior de Cuba</div>",
+            "<div class='job'><span class='when'>05/2017 — 07/2020</span><br><b>Administrador de SWIFT</b> — Banco Exterior de Cuba</div>",
+            "<div class='job'><span class='when'>01/2015 — 05/2017</span><br><b>CIO/CTO</b> — Banco Exterior de Cuba</div>",
+            "<div class='job'><span class='when'>07/2013 — 01/2015</span><br><b>Especialista en Hardware y Administrador SWIFT</b> — Banco Exterior de Cuba</div>",
+            "<div class='job'><span class='when'>07/2012 — 06/2013</span><br><b>CIO/CTO</b> — Dirección Provincial de Justicia, La Habana</div>",
+            "<div class='job'><span class='when'>04/2011 — 06/2012</span><br><b>Administrador de Red</b> — Dirección Provincial de Justicia, La Habana</div>",
+            "<h2>Tecnologías</h2>",
+            "<p>pfSense, Docker, CheckMK, OceanStore, Microsoft SQL Server, MySQL, PostgreSQL, MongoDB, ESXi, Proxmox, Mail Gateway, Squid, Postfix, agentes de IA con n8n.</p>",
+            "<h2>Habilidades</h2>",
+            "<ul><li>Instalación de hardware</li><li>Gestión del sistema</li><li>Relaciones con proveedores</li><li>Seguridad de la red</li><li>Colaboración en equipo</li><li>Comunicación verbal y escrita</li><li>Copias de seguridad</li><li>Soporte al usuario</li><li>Resolución de problemas</li><li>Instalación de software</li></ul>",
+            "<h2>Educación</h2>",
+            "<p><b>Licenciado en Pedagogía, especialidad en Informática</b> — Universidad de Ciencias Pedagógicas Héctor Alfredo Pineda Zaldívar, La Habana (07/2013). Tesis: Sitio Web de la Dirección Provincial de Justicia.</p>",
+            "</body></html>"
+          ].join("\n");
+          var blob = new Blob([cv], { type: "text/html;charset=utf-8" });
+          var url = URL.createObjectURL(blob);
+          var a = document.createElement("a");
+          a.href = url; a.download = "CV_Alain_Quintero_Garcia.html";
+          document.body.appendChild(a); a.click();
+          document.body.removeChild(a);
+          setTimeout(function () { URL.revokeObjectURL(url); }, 1500);
+        });
+      })();
+    </script>
+  </body>
+</html>
